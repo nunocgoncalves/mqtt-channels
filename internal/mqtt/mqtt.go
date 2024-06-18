@@ -8,6 +8,16 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
+type ClientConfig struct {
+	ClientID   string
+	Broker     string
+	Port       string
+	Username   string
+	Password   string
+	UseTLS     bool
+	TLSConfig  *tls.Config
+}
+
 type Client interface {
 	Connect() error
 	Subscribe(topic string, callback mqtt.MessageHandler) error
@@ -20,15 +30,22 @@ type client struct {
 	mqttClient mqtt.Client
 }
 
-func NewClient(clientid, broker string, port string, username, password string) Client {
+func NewClient(config ClientConfig) Client {
 	opts := mqtt.NewClientOptions()
-	opts.SetClientID(clientid)
-	opts.AddBroker(fmt.Sprintf("tls://%s:%s", broker, port))
-	opts.SetUsername(username)
-	opts.SetPassword(password)
-	opts.SetTLSConfig(&tls.Config{InsecureSkipVerify: true}) // Adjust this based on your TLS configuration
+	opts.SetClientID(config.ClientID)
+  
+  // Determine the protocol based on the UseTLS flag
+	protocol := "tcp"
+	if config.UseTLS {
+		protocol = "tls"
+		opts.SetTLSConfig(config.TLSConfig) // This will be ignored if UseTLS is false
+	}
 
-	opts.OnConnect = func(c mqtt.Client) {
+  opts.AddBroker(fmt.Sprintf("%s://%s:%s", protocol, config.Broker, config.Port))
+	opts.SetUsername(config.Username)
+	opts.SetPassword(config.Password)
+	
+  opts.OnConnect = func(c mqtt.Client) {
 		log.Println("Connected to MQTT broker")
 	}
 	opts.OnConnectionLost = func(c mqtt.Client, err error) {

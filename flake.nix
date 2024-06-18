@@ -18,13 +18,6 @@
             gotools
             golangci-lint
           ];
-          shellHook = ''
-			      # Code ENVs
-            export MQTT_BROKER="10.0.0.108"
-            export MQTT_PORT="1883"
-			      export MQTT_USER="root"
-			      export MQTT_PASSWORD="coreflux"
-         '';
         };
       });
     };
